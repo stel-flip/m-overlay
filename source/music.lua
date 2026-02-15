@@ -1,4 +1,4 @@
-local music = {
+ local music = {
 	PLAYLIST = {},
 	SONGS = {},
 	PLAYLIST_ID = -1,
@@ -357,6 +357,7 @@ function music.playNextTrack()
 		
 		if music.PLAYING then
 			local path = music.PLAYING.INFO.FILEPATH
+			music.CURRENT_FILENAME = music.PLAYING.INFO.FILENAME
 			if music.PLAYLIST_ID == 0x0 then
 				log.info("[MUSIC] Playing track #%d for menu (%q)", track_id, path)
 			else
@@ -381,9 +382,9 @@ end
 
 function music.draw()
 	if music.MUTED then
-		love.graphics.setColor(255, 255, 255, 255)
+		love.graphics.setColor(1, 1, 1, 1)
 		love.graphics.easyDraw(MUTED_TEXTURE, 256 - 16, 256 - 68, 0, 32, 32)
-	end
+	end 
 end
 
 memory.hook("frame", "Melee - Music Think", music.playNextTrack)

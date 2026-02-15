@@ -30,7 +30,6 @@ local color = require("util.color")
 local gui = require("gui")
 
 local ease = require("ease")
-
 local web = require("web")
 local downloader = require("downloader")
 
@@ -40,6 +39,12 @@ local newImage = graphics.newImage
 local PORT_FONT = graphics.newFont("fonts/melee-bold.otf", 42)
 local WAITING_FONT = graphics.newFont("fonts/melee-bold.otf", 24)
 local DEBUG_FONT = graphics.newFont("fonts/melee-bold.otf", 12)
+local MUSIC_FONTS = {
+    [1] = graphics.newFont("fonts/melee-bold.otf", 14),
+    [2] = graphics.newFont("fonts/melee-bold.otf", 18),
+    [3] = graphics.newFont("fonts/melee-bold.otf", 22),
+    [4] = graphics.newFont("fonts/melee-bold.otf", 26),
+}
 
 local GRADIENT = newImage("textures/gui/gradient.png")
 local DOLPHIN = newImage("textures/dolphin.png")
@@ -377,6 +382,18 @@ function love.drawControllerOverlay()
 		end
 
 		overlay.draw(controller)
+
+		if music.CURRENT_FILENAME and PANEL_SETTINGS:ShowMusicFilename() then
+			--graphics.setFont(MUSIC_FILENAME_FONT)
+			local fontSize = PANEL_SETTINGS:GetMusicFontSize() or 2
+			graphics.setFont(MUSIC_FONTS[fontSize] or MUSIC_FONTS[2])
+			graphics.setColor(255, 255, 255, 255)
+		
+			local textX = 4 + 64 + 12   -- 12px padding after port icon
+			local textY = 256 - 36      -- vertically centered relative to port
+		
+			graphics.print(music.CURRENT_FILENAME, textX, textY)
+		end
 
 		if PANEL_SETTINGS:GetDebuggingInputFlags() > 0 then
 			local x, y = memory.game.translateJoyStick(controller.joystick.x, controller.joystick.y)
