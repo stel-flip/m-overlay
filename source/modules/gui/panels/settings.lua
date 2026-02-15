@@ -24,6 +24,11 @@ DEBUG_INPUT_JOYSTICK = 2
 DEBUG_INPUT_C_STICK = 4
 DEBUG_INPUT_TRIGGERS = 8
 
+MUSIC_FONT_SMALL = 1
+MUSIC_FONT_MEDIUM = 2
+MUSIC_FONT_LARGE = 3
+MUSIC_FONT_XL = 4
+
 function PANEL:OnMouseMoved(x, y, dx, dy, istouch)
 	local px, py = self.MAIN:GetPos()
 	local pw, ph = self.MAIN:GetSize()
@@ -37,6 +42,8 @@ function PANEL:OnMouseMoved(x, y, dx, dy, istouch)
 end
 
 function PANEL:Settings()
+	-- Music font size state (default to medium)
+	self.music_font_size = MUSIC_FONT_MEDIUM
 	self:super() -- Initialize our baseclass
 
 	self:DockMargin(0, 0, 0, 0)
@@ -54,18 +61,49 @@ function PANEL:Settings()
 	self.MUSICPROBABILITY:SetSize(512, 256)
 	self.MUSICPROBABILITY:Center()
 	self.MUSICPROBABILITY:SetVisible(false)
-
+	
 	self.DEBUG_INPUTS_CONFIG = self:Add("DebugInputs")
 	self.DEBUG_INPUTS_CONFIG:SetSize(156, 164)
 	self.DEBUG_INPUTS_CONFIG:Center()
 	self.DEBUG_INPUTS_CONFIG:SetVisible(false)
-	
+
+    self.MUSIC_FONT_CONFIG = self:Add("RadioPanel")
+	self.MUSIC_FONT_CONFIG:SetText("Music font size")
+	self.MUSIC_FONT_CONFIG:SetSize(156, 160)
+	self.MUSIC_FONT_CONFIG:Center()
+	self.MUSIC_FONT_CONFIG:SetVisible(false)
+	self.MUSIC_FONT_CONFIG.OnSelectOption = function(_, value)
+		self.music_font_size = value
+	end
+
+	self.MUSIC_FONT_CONFIG:AddOption(MUSIC_FONT_SMALL, "Small")
+	self.MUSIC_FONT_CONFIG:AddOption(MUSIC_FONT_MEDIUM, "Medium")
+	self.MUSIC_FONT_CONFIG:AddOption(MUSIC_FONT_LARGE, "Large")
+	self.MUSIC_FONT_CONFIG:AddOption(MUSIC_FONT_XL, "Extra Large")
+
+	self.MUSIC_FONT_CONFIG.OnClosed = function()
+    self.MAIN:SetVisible(true)
+	end
+
+	-- adds back button for the music font menu
+	local backButton = self.MUSIC_FONT_CONFIG:Add("ButtonIcon")
+	backButton:SetText("Save")
+	backButton:Dock(DOCK_BOTTOM)
+	backButton:SetImage("textures/gui/disk.png") -- optional icon
+	backButton:SetTooltipTitle("BACK")
+	backButton:SetTooltipBody("Return to the main settings menu")
+
+	backButton.OnClick = function()
+    	self.MUSIC_FONT_CONFIG:SetVisible(false)
+    	self.MAIN:SetVisible(true)
+	end
+
 	self.DEBUG_INPUTS_CONFIG.OnClosed = function(this)
 		self.MAIN:SetVisible(true)
 	end	
 
 	self.MAIN = self:Add("TabbedPanel")
-	self.MAIN:SetSize(296 + 32, 196)
+	self.MAIN:SetSize(296 + 32, 230)
 	self.MAIN:DockPadding(0, 0, 0, 0)
 	self.MAIN:Center()
 
@@ -236,7 +274,25 @@ NOTE: This button is only usable when in a supported game.]])
 	self.ALWAYSPORT:SetTooltipTitle("ALWAYS SHOW PORT")
 	self.ALWAYSPORT:SetTooltipBody([[Always show the current port in the bottom left of the overlay window.]])
 
-	self.DPAD = self.GENERAL.RIGHT:Add("CheckBox")
+	self.SHOW_MUSIC_FILENAME = self.GENERAL.LEFT:Add("CheckBox")
+	self.SHOW_MUSIC_FILENAME:SetText("Show music filename")
+	self.SHOW_MUSIC_FILENAME:Dock(DOCK_TOP)
+	self.SHOW_MUSIC_FILENAME:SetTooltipTitle("SHOW MUSIC FILENAME")
+	self.SHOW_MUSIC_FILENAME:SetTooltipBody([[Display the currently playing music file name on the overlay.]])
+
+	self.MUSIC_FONT_BUTTON = self.GENERAL.LEFT:Add("ButtonIcon")
+	self.MUSIC_FONT_BUTTON.OnClick = function()
+		self.MAIN:SetVisible(false)
+		self.MUSIC_FONT_CONFIG:SetVisible(true)
+		self.MUSIC_FONT_CONFIG:BringToFront()
+	end
+	self.MUSIC_FONT_BUTTON:SetText("Music font size")
+	self.MUSIC_FONT_BUTTON:Dock(DOCK_TOP)
+
+    self.MUSIC_FONT_BUTTON:SetTooltipTitle("MUSIC FONT SIZE")
+	self.MUSIC_FONT_BUTTON:SetTooltipBody([[Adjusts the size of the displayed music filename text.]])
+
+    self.DPAD = self.GENERAL.RIGHT:Add("CheckBox")
 	self.DPAD:SetText("Show D-Pad")
 	self.DPAD:Dock(DOCK_TOP)
 	self.DPAD:SetTooltipTitle("DIRECTIONAL-PAD")
@@ -499,6 +555,8 @@ function PANEL:GetSaveTable()
 		["slippi-mode"] = self:GetSlippiMode(),
 		["port-in-title"] = self:IsPortTitleEnabled(),
 		["always-show-port"] = self:AlwaysShowPort(),
+		["show-music-filename"] = self:ShowMusicFilename(),
+		["music-font-size"] = self:GetMusicFontSize(),
 		["high-contrast"] = self:IsHighContrast(),
 		["enable-dpad"] = self:IsDPadEnabled(),
 		["enable-start"] = self:IsStartEnabled(),
@@ -579,6 +637,14 @@ end
 
 function PANEL:AlwaysShowPort()
 	return self.ALWAYSPORT:IsToggled()
+end
+
+function PANEL:ShowMusicFilename()
+    return self.SHOW_MUSIC_FILENAME:IsToggled()
+end
+
+function PANEL:GetMusicFontSize()
+    return self.music_font_size or MUSIC_FONT_MEDIUM
 end
 
 function PANEL:IsHighContrast()
@@ -728,6 +794,14 @@ function PANEL:LoadSettings()
 
 	self.PORTTITLE:SetToggled(settings["port-in-title"], true)
 	self.ALWAYSPORT:SetToggled(settings["always-show-port"], true)
+
+	self.SHOW_MUSIC_FILENAME:SetToggled(settings["show-music-filename"], true)
+	self.music_font_size = settings["music-font-size"] or MUSIC_FONT_MEDIUM
+
+	if self.MUSIC_FONT_CONFIG then
+    	self.MUSIC_FONT_CONFIG:SetValue(self.music_font_size)
+	end
+
 	self.HIGH_CONTRAST:SetToggled(settings["high-contrast"], true)
 	self.DPAD:SetToggled(settings["enable-dpad"], true)
 	self.START:SetToggled(settings["enable-start"], true)
